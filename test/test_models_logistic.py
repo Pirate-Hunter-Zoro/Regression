@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
-from src.model_logistic import *
+from src.models_logistic import *
 
-class test_model_logistic(unittest.TestCase):
+class TestModelLogistic(unittest.TestCase):
     
     def test_model(self):
         
