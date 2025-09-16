@@ -43,5 +43,35 @@ def kfold_indices(n: int, k:int=10, seed:int=42) -> list[tuple[np.ndarray,np.nda
     
     return partitions
 
-def cv_grid_search(model_fn, predict_fn, X:np.ndarray, y:np.ndarray, k:int, param_grid, task):
-    pass
+def cv_grid_search(model_fn, predict_fn, X:np.ndarray, y:np.ndarray, param_grid, *, k:int=10, task:str="reg") -> tuple[list[dict], dict, dict]:
+    """For each hyperparameter setting in the grid, run k-fold cross-validation and record the mean score.
+    The hyperparameter setting with the best average score will be picked.
+
+    Args:
+        model_fn (function): model_fit_fn(X_tr_biased, y_tr, **params) -> model
+        predict_fn (function): predict_fun(X_val_biased, model, task) -> prediction (for regression, y_pred has shape (m,); for classification, still same shape but integer labels)
+        X (np.ndarray): input data
+        y (np.ndarray): expected outputs
+        param_grid (dict): dict wehre each key is a hyperparameter name and each value is a list of candidate values to test
+        k (int, optional): k-fold specification. Defaults to 10.
+        task (str, optional): dictates classification or regression. Defaults to "reg".
+
+    Returns:
+        tuple[list[dict], dict, dict]: list[{"params": <dict>, "mean_metric": <float>}], best dict, worst dict
+    """
+    if not len(X.shape) == 2:
+        raise ValueError(f"Input X should be 2D but had shape {X.shape}")
+    n = X.shape[0]
+    if not y.shape == (n,):
+        raise ValueError(f"Expected output y should have shape {(n,)} but instead had shape {y.shape}")
+    if k < 2:
+        raise ValueError(f"Expected at least 2 folds but recieved k={k}")
+    if n < k:
+        raise ValueError(f"Cannot perform k-fold cross validation when k>n, recieved k={k} and n={n}")
+    if task != "reg" and task != "clf":
+        raise ValueError(f"Recieved invalid task argument: {task}")
+    
+    for _, v in param_grid:
+        # Ensure iterable
+        if not isinstance(v, iter):
+            raise ValueError(f"Invalid parameter list specified: {v}")
