@@ -1,6 +1,8 @@
 import numpy as np
 import unittest
 from src.cv import *
+from src.models_linear import *
+from src.models_logistic import *
 
 class TestCV(unittest.TestCase):
     
@@ -28,3 +30,27 @@ class TestCV(unittest.TestCase):
         # Ensure same random seed yields deterministic result
         for fold1, fold2 in zip(folds, new_folds):
             self.assertTrue(np.array_equal(fold1[0],fold2[0]) and np.array_equal(fold1[1],fold2[1]))
+            
+    def test_cv_grid_search(self):
+        n = 100
+        X = np.arange(n, dtype=float)
+        y_linear = 2*X+0.1*np.random.rand(n)
+        y_logistic = np.zeros(n, dtype=int)
+        y_logistic[X>50]=1
+        
+        # Test linear regression
+        results, best, worst = cv_grid_search(model_fn=fit_gd_linear, predict_fn=predict_linear, X=X, y=y_linear, param_grid={"eta": [0.1, 0.01, 0.001]})
+        self.assertTrue(len(results) == 3)
+        self.assertTrue(best["mean_metric"] <= worst["mean_metric"])
+        
+        new_results, new_best,  new_worst = cv_grid_search(model_fn=fit_gd_linear, predict_fn=predict_linear, X=X, y=y_linear, param_grid={"eta": [0.1,0.01,0.001]})
+        self.assertTrue(new_results == results and new_best == best and new_worst == worst)
+        
+        scaled_X = 1000*X
+        _,scaled_best,_ = cv_grid_search(model_fn=fit_gd_linear,predict_fn=predict_linear,X=scaled_X,y=y_linear,param_grid={"eta":[0.1,0.01,0.001]})
+        self.assertTrue(abs(best["mean_metric"]-scaled_best["mean_metric"]) <= 1e-10)
+        
+        # Test logistic regression
+        results, best, worst = cv_grid_search(model_fn=fit_gd_logistic, predict_fn=predict_labels_softmax, X=X, y=y_logistic, param_grid={"eta": [0.1, 0.01]}, task="clf")
+        self.assertTrue(best["mean_metric"] >= worst["mean_metric"])
+        self.assertTrue(abs(best["mean_metric"] - 1) < 0.05)
