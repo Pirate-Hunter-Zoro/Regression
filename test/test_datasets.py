@@ -75,3 +75,6 @@ class TestDatasets(unittest.TestCase):
         _, best, _ = cv_grid_search(model_fn=fit_gd_linear,predict_fn=predict_linear, X=X_train, y=y_train)
         self.assertTrue(np.isfinite(best["mean_metric"])) # An infinite mean squared error would be... troubling
         self.assertTrue(best["mean_metric"] > 0) # But we will still have SOME error
+        
+    def test_load_breast_cancer_data(self):
+        pass
