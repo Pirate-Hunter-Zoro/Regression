@@ -1,4 +1,6 @@
 import numpy as np
+import sklearn
+from sklearn.datasets import fetch_california_housing
 
 def make_synth_reg_linear(n_train: int=100, n_test: int=20, noise: float=0.1, seed: int=42) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: 
     """Generate synthetic linear regression data with the specified number of training and testing cases and noise
@@ -101,8 +103,39 @@ def make_synth_clf(n_train: int=100, n_test: int=20, noise: float=0.1, seed: int
     test_y = y_permuted[n_train:]
     return train_X, train_y, test_X, test_y
 
-def load_california(n_train: int=100, n_test: int=20, seed: int=42):
-    pass
+def load_california(n_train: int=100, n_test: int=20, seed: int=42) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    data = fetch_california_housing(as_frame=False) # We want numpy array
+    X_all = data.data
+    y_all = data.target
+    if not isinstance(X_all, np.ndarray) or not isinstance(y_all, np.ndarray):
+        raise ValueError(f"Must convert California housing data into numpy arrays - currently they are {X_all} and {y_all}")
+    n = X_all.shape[0]
+    if not (n_train + n_test <= n and n_train > 0 and n_test > 0):
+        raise ValueError(f"Received invalid train and testing sizes of {n_train} and {n_test} respectivly")
+    if len(X_all.shape) != 2:
+        raise ValueError(f"Must turn housing data into 2D array")
+    if X_all.shape[1] != 8:
+        raise ValueError(f"Expected 8 features in the housing observations...")
+    if len(y_all.shape) > 2:
+        raise ValueError(f"Expected 1D or 2D output shape but recieved {y_all.shape}")
+    if y_all.shape[0] != n:
+        raise ValueError(f"Expected y to have the same count as X ({n}) but received {y_all.shape[0]}")
+    if y_all.shape == (n,1):
+        y_all = y_all.reshape((n,))
+    
+    rng = np.random.RandomState(seed)
+    permuted_indices = rng.permutation(n)
+    X_sample = X_all[permuted_indices[:n_train+n_test]]
+    y_sample = y_all[permuted_indices[:n_train+n_test]]
+    X_train = X_sample[:n_train]
+    X_test = X_sample[n_train:]
+    y_train = y_sample[:n_train]
+    y_test = y_sample[n_train:]
+    
+    if (not np.issubdtype(X_train.dtype, np.floating)) or (not np.issubdtype(y_train.dtype, np.floating)):
+        raise ValueError(f"Must have float type arrays")
+    
+    return X_train, y_train, X_test, y_test
 
 def load_breast_cancer(n_train: int=100, n_test: int=20, seed: int=42):
     pass

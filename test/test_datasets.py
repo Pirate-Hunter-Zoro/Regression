@@ -58,3 +58,20 @@ class TestDatasets(unittest.TestCase):
         _, best, _ = cv_grid_search(model_fn=fit_gd_logistic,predict_fn=predict_labels_softmax, X=X_train, y=y_train, param_grid={"iters":[300]}, task="clf")
         best_accuracy = best["mean_metric"]
         self.assertTrue(best_accuracy > 0.9)
+        
+    def test_load_california(self):
+        n_train = 200
+        n_test = 300
+        seed = 123
+        X_train, y_train, X_test, y_test = load_california(n_train, n_test, seed)
+        self.assertTrue(X_train.shape == (n_train, 8))
+        self.assertTrue(X_test.shape == (n_test, 8))
+        self.assertTrue(y_train.shape == (n_train,))
+        self.assertTrue(y_test.shape == (n_test,))
+        
+        new_X_train, new_y_train, new_X_test, new_y_test = load_california(n_train, n_test, seed)
+        self.assertTrue(np.array_equal(X_train, new_X_train) and np.array_equal(y_train, new_y_train) and np.array_equal(X_test, new_X_test) and np.array_equal(y_test, new_y_test))
+        
+        _, best, _ = cv_grid_search(model_fn=fit_gd_linear,predict_fn=predict_linear, X=X_train, y=y_train)
+        self.assertTrue(np.isfinite(best["mean_metric"])) # An infinite mean squared error would be... troubling
+        self.assertTrue(best["mean_metric"] > 0) # But we will still have SOME error
