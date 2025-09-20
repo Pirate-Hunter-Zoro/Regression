@@ -1,0 +1,8 @@
+=== linearized_synth_quadratic ===
+    CV-A (learning weight sweep, l2=0): best learning rate = 0.1, mean CV MSE = 0.009034424464532622
+    CV-B (l2 sweep @ eta=0.1): best l2 = 0.0, mean CV MSE = 0.009034424464532622
+    Test MSEs:
+    GD (no reg):    0.009768925293272245
+    GD (ridge, l2_star):  0.009768925293272245
+    Closed-form ridge (l2_star): 0.009566177648861309
+        

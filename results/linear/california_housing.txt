@@ -1,0 +1,8 @@
+=== california_housing ===
+    CV-A (learning weight sweep, l2=0): best learning rate = 0.1, mean CV MSE = 1.959672727199857
+    CV-B (l2 sweep @ eta=0.1): best l2 = 0.0, mean CV MSE = 1.959672727199857
+    Test MSEs:
+    GD (no reg):    0.5073095307395898
+    GD (ridge, l2_star):  0.5073095307395898
+    Closed-form ridge (l2_star): 0.5080979362334945
+        

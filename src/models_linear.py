@@ -2,6 +2,16 @@ import numpy as np
 from src.optim import *
 
 def fit_normal_eq_ridge(X: np.ndarray, y: np.ndarray, l2: float=0) -> np.ndarray:
+    """Directly solve for the weights that optimize MSE loss via linear algebra
+
+    Args:
+        X (np.ndarray): input array
+        y (np.ndarray): expected output values
+        l2 (float, optional): Regularization constant. Defaults to 0.
+
+    Returns:
+        np.ndarray: resulting weights which optimize MSE loss
+    """
     if not len(X.shape) == 2:
         raise ValueError(f"Expected 2D matrix for input observations but received shape {X.shape}")
     n = X.shape[0]
@@ -22,7 +32,7 @@ def fit_normal_eq_ridge(X: np.ndarray, y: np.ndarray, l2: float=0) -> np.ndarray
     R[0][0] = 0 # l2 does not apply to bias term
     A = np.matmul(X.T,X)+l2*n*R
     b = np.matmul(X.T, y)
-    
+    # Solve for Aw=b
     w = np.linalg.solve(A, b)
     return w
 
