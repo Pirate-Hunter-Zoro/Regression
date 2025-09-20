@@ -77,4 +77,56 @@ class TestDatasets(unittest.TestCase):
         self.assertTrue(best["mean_metric"] > 0) # But we will still have SOME error
         
     def test_load_breast_cancer_data(self):
-        pass
+        n_train = 200
+        n_test = 300
+        d = 30
+        seed = 123
+        X_train, y_train, X_test, y_test = load_breast_cancer_data(n_train, n_test, seed)
+        self.assertTrue(X_train.shape == (n_train, d))
+        self.assertTrue(X_test.shape == (n_test, d))
+        self.assertTrue(y_train.shape == (n_train,))
+        self.assertTrue(y_test.shape == (n_test,))
+        
+        new_X_train, new_y_train, new_X_test, new_y_test = load_breast_cancer_data(n_train, n_test, seed)
+        self.assertTrue(np.array_equal(X_train, new_X_train) and np.array_equal(y_train, new_y_train) and np.array_equal(X_test, new_X_test) and np.array_equal(y_test, new_y_test))
+        
+        _, best, _ = cv_grid_search(model_fn=fit_gd_logistic,predict_fn=predict_labels_softmax, X=X_train, y=y_train, task="clf")
+        self.assertTrue(best["mean_metric"] < 1) # A greater than 1 accuracy makes no sense
+        self.assertTrue(best["mean_metric"] > 0.9) # The data set is "easy" so we'd better be classifying somewhat well...
+        
+    def test_load_digits_full(self):
+        n_train = 200
+        n_test = 300
+        d = 64
+        seed = 123
+        X_train, y_train, X_test, y_test = load_digits_full(n_train, n_test, seed)
+        self.assertTrue(X_train.shape == (n_train, d))
+        self.assertTrue(X_test.shape == (n_test, d))
+        self.assertTrue(y_train.shape == (n_train,))
+        self.assertTrue(y_test.shape == (n_test,))
+        
+        new_X_train, new_y_train, new_X_test, new_y_test = load_digits_full(n_train, n_test, seed)
+        self.assertTrue(np.array_equal(X_train, new_X_train) and np.array_equal(y_train, new_y_train) and np.array_equal(X_test, new_X_test) and np.array_equal(y_test, new_y_test))
+        
+        _, best, _ = cv_grid_search(model_fn=fit_gd_logistic,predict_fn=predict_labels_softmax, X=X_train, y=y_train, task="clf")
+        self.assertTrue(best["mean_metric"] < 1) # A greater than 1 accuracy makes no sense
+        self.assertTrue(best["mean_metric"] > 0.8) # A reasonable performance expectation...
+        
+    def test_load_digits_4v9(self):
+        n_train = 50
+        n_test = 100
+        d = 64
+        seed = 123
+        X_train, y_train, X_test, y_test = load_digits_4v9(n_train, n_test, seed)
+        self.assertTrue(set(np.unique(y_train)) == {0,1})
+        self.assertTrue(X_train.shape == (n_train, d))
+        self.assertTrue(X_test.shape == (n_test, d))
+        self.assertTrue(y_train.shape == (n_train,))
+        self.assertTrue(y_test.shape == (n_test,))
+        
+        new_X_train, new_y_train, new_X_test, new_y_test = load_digits_4v9(n_train, n_test, seed)
+        self.assertTrue(np.array_equal(X_train, new_X_train) and np.array_equal(y_train, new_y_train) and np.array_equal(X_test, new_X_test) and np.array_equal(y_test, new_y_test))
+        
+        _, best, _ = cv_grid_search(model_fn=fit_gd_logistic,predict_fn=predict_labels_softmax, X=X_train, y=y_train, task="clf")
+        self.assertTrue(best["mean_metric"] < 1) # A greater than 1 accuracy makes no sense
+        self.assertTrue(best["mean_metric"] > 0.95) # The binary case for digits should be even easier...

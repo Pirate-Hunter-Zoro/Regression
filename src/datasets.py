@@ -1,5 +1,4 @@
 import numpy as np
-import sklearn
 from sklearn.datasets import fetch_california_housing, load_breast_cancer, load_digits
 
 def make_synth_reg_linear(n_train: int=100, n_test: int=20, noise: float=0.1, seed: int=42) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: 
@@ -161,8 +160,8 @@ def load_breast_cancer_data(n_train: int=100, n_test: int=20, seed: int=42) -> t
     data = load_breast_cancer(as_frame=False) # Again we want numpy arrays
     X_all = data.data
     y_all = data.target
-    n = X_all.shape[1]
-    d = 30 # number of features
+    n = X_all.shape[0]
+    d = X_all.shape[1] # number of features
     if not X_all.shape == (n, d):
         raise ValueError(f"Unexpected loaded data of shape {X_all.shape} when expecting {(n,d)}...")
     if y_all.shape == (n,1):
@@ -188,8 +187,92 @@ def load_breast_cancer_data(n_train: int=100, n_test: int=20, seed: int=42) -> t
     
     return X_train, y_train, X_test, y_test
     
-def load_digits_full(n_train: int=100, n_test: int=20, seed: int=42):
-    pass
+def load_digits_full(n_train: int=100, n_test: int=20, seed: int=42) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Load digits for logistic regression data
+
+    Args:
+        n_train (int, optional): Number of training observations. Defaults to 100.
+        n_test (int, optional): Number of testing observations. Defaults to 20.
+        seed (int, optional): Random seed. Defaults to 42.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: X_train, y_train, X_test, y_test
+    """
+    data = load_digits(as_frame=False) # Again we want numpy arrays
+    X_all = data.data
+    y_all = data.target
+    n = X_all.shape[0]
+    d = X_all.shape[1] # number of features
+    if not X_all.shape == (n, d):
+        raise ValueError(f"Unexpected loaded data of shape {X_all.shape} when expecting {(n,d)}...")
+    if y_all.shape == (n,1):
+        y_all = y_all.reshape((n,))
+    if not y_all.shape == (n,):
+        raise ValueError(f"Unexpected loaded target of shape {y_all.shape} when expecting {(n,)}...")
+    if not np.issubdtype(y_all.dtype, np.integer):
+        raise ValueError(f"Unexpected type for target - got {y_all.dtype}...")
+    if not np.issubdtype(X_all.dtype, np.floating):
+        raise ValueError(f"Unexpected type for data - got {X_all.dtype}...")
+    
+    if not (n_train + n_test <= n and n_train > 0 and n_test > 0):
+        raise ValueError(f"Received invalid train and testing sizes of {n_train} and {n_test} respectivly")
+    
+    rng = np.random.RandomState(seed)
+    permuted_indices = rng.permutation(n)
+    X_sample = X_all[permuted_indices[:n_train+n_test]]
+    y_sample = y_all[permuted_indices[:n_train+n_test]]
+    X_train = X_sample[:n_train]
+    X_test = X_sample[n_train:]
+    y_train = y_sample[:n_train]
+    y_test = y_sample[n_train:]
+    
+    return X_train, y_train, X_test, y_test
 
 def load_digits_4v9(n_train: int=100, n_test: int=20, seed: int=42):
-    pass
+    """Load ONLY 4 and 9 digits for logistic regression data
+
+    Args:
+        n_train (int, optional): Number of training observations. Defaults to 100.
+        n_test (int, optional): Number of testing observations. Defaults to 20.
+        seed (int, optional): Random seed. Defaults to 42.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: X_train, y_train, X_test, y_test
+    """
+    data = load_digits(as_frame=False) # Again we want numpy arrays
+    X_all = data.data
+    y_all = data.target
+    n = X_all.shape[0]
+    d = X_all.shape[1] # number of features
+    if not X_all.shape == (n, d):
+        raise ValueError(f"Unexpected loaded data of shape {X_all.shape} when expecting {(n,d)}...")
+    if y_all.shape == (n,1):
+        y_all = y_all.reshape((n,))
+    if not y_all.shape == (n,):
+        raise ValueError(f"Unexpected loaded target of shape {y_all.shape} when expecting {(n,)}...")
+    if not np.issubdtype(y_all.dtype, np.integer):
+        raise ValueError(f"Unexpected type for target - got {y_all.dtype}...")
+    if not np.issubdtype(X_all.dtype, np.floating):
+        raise ValueError(f"Unexpected type for data - got {X_all.dtype}...")
+    
+    # Now we filter for only 4 and 9
+    X_all = X_all[(y_all==4) | (y_all==9)]
+    y_all = y_all[(y_all==4) | (y_all==9)]
+    # Remap to binary classification
+    y_all[(y_all==4)] = 0
+    y_all[(y_all==9)] = 1
+    n = X_all.shape[0]
+    
+    if not (n_train + n_test <= n and n_train > 0 and n_test > 0):
+        raise ValueError(f"Received invalid train and testing sizes of {n_train} and {n_test} respectivly")
+    
+    rng = np.random.RandomState(seed)
+    permuted_indices = rng.permutation(n)
+    X_sample = X_all[permuted_indices[:n_train+n_test]]
+    y_sample = y_all[permuted_indices[:n_train+n_test]]
+    X_train = X_sample[:n_train]
+    X_test = X_sample[n_train:]
+    y_train = y_sample[:n_train]
+    y_test = y_sample[n_train:]
+    
+    return X_train, y_train, X_test, y_test
