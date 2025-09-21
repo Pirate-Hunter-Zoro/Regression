@@ -1,0 +1,79 @@
+import numpy as np
+from src.datasets import make_synth_clf, load_breast_cancer_data, load_digits_full, load_digits_4v9
+from src.cv import cv_grid_search
+from src.models_logistic import fit_gd_logistic, predict_labels_softmax
+from src.utils import *
+
+SEED = 123
+
+n_train = 500
+n_test = 1000
+
+chosen_iters = 500
+
+def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str) -> tuple[float,float]:
+    """Helper function to run the cv_grid_search and return the best parameter value for the specified parameter
+
+    Args:
+        X (np.ndarray): input observations
+        y (np.ndarray): expected outputs
+        param_grid (dict): dictionary of parameters
+        test_param (str): parameter cared about
+
+    Returns:
+        tuple[float,float]: the best value for parameter cared about paired with the resulting metric achieved by said value
+    """
+    if test_param not in param_grid.keys():
+        raise ValueError(f"Invalid parameter specified: {test_param}")
+    _, best, _ = cv_grid_search(fit_gd_logistic, predict_labels_softmax, X, y, param_grid, seed=SEED, task="clf")
+    return (best["params"][test_param], best["mean_metric"])
+
+
+def main():
+    # Sweep to find the best learning rate
+    datasets = {"synthetic_clf": make_synth_clf(n_train, n_test, seed=SEED), "breast_cancer": load_breast_cancer_data(100,300,seed=SEED), "digits_full": load_digits_full(n_train,n_test,seed=SEED), "digits_4v9": load_digits_4v9(100,200,seed=SEED)}
+    for label, dataset in datasets.items():
+        X_train, y_train, X_test, y_test = dataset
+        
+        # Sweep to find the best learning rate
+        param_grid_A = {"eta":[1e-3,3e-3,1e-2,3e-2,1e-1], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0]}
+        eta_star, accuracy_eta_star = run_grid(X_train, y_train, param_grid_A, "eta")
+
+        # Sweep to find best l2 regularization constant
+        param_grid_B = {"eta":[eta_star], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0,1e-4,3e-4,1e-3,3e-3,1e-2,3e-2]}
+        l2_star, accuracy_l2_star = run_grid(X_train, y_train, param_grid_B, "l2")
+        
+        # The parameter grid sweep preprocesses the data, but for the remainder of our calls we need to do that ourself
+        X_train, mu, sigma = standardize(X_train)
+        X_train = add_bias(X_train)
+        
+        # Perform gradient descent with the best parameters we have discovered and NO regularization
+        K = len(np.unique(y_train))
+        no_reg_model_weights = fit_gd_logistic(X_train, y_train, K, eta_star, chosen_iters)
+        
+        # Test the non-regularization training logistic model after preprocessing the test set
+        X_test = (X_test - mu) / sigma
+        X_test = add_bias(X_test)
+        y_hat_no_reg = predict_labels_softmax(X_test, no_reg_model_weights)
+        accuracy_no_reg = sum(y_hat_no_reg == y_test) / len(y_test)
+        
+        # Now for regularization training
+        reg_model_weights = fit_gd_logistic(X_train, y_train, K, eta_star, chosen_iters, l2=l2_star)
+        y_hat_reg = predict_labels_softmax(X_test, reg_model_weights)
+        accuracy_reg = sum(y_hat_reg == y_test) / len(y_test)
+        
+        # Generate a report
+        report = f"""=== {label} ===
+    CV-A (learning weight sweep, l2=0): best learning rate = {eta_star}, mean CV accuracy = {accuracy_eta_star}
+    CV-B (l2 sweep @ eta={eta_star}): best l2 = {l2_star}, mean CV accuracy = {accuracy_l2_star}
+    Accuracy without Regularized Learning: {accuracy_no_reg}
+    Accuracy with Regularized Learning: {accuracy_reg}
+        """
+        
+        import os
+        os.makedirs("results/logistic", exist_ok=True)
+        with open(f"results/logistic/{label}.txt", "w") as f:
+            f.write(report)
+            
+if __name__=="__main__":
+    main()

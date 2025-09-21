@@ -1,0 +1,6 @@
+=== synthetic_clf ===
+    CV-A (learning weight sweep, l2=0): best learning rate = 0.001, mean CV accuracy = 1.0
+    CV-B (l2 sweep @ eta=0.001): best l2 = 0.0, mean CV accuracy = 1.0
+    Accuracy without Regularized Learning: 1.0
+    Accuracy with Regularized Learning: 1.0
+        
