@@ -3,6 +3,8 @@ from src.datasets import make_synth_reg_linear, make_synth_reg_quadratic, load_c
 from src.cv import cv_grid_search
 from src.models_linear import fit_gd_linear, fit_normal_eq_ridge, predict_linear
 from src.utils import *
+from src.plots import plot_curve
+import os
 
 SEED = 123
 
@@ -25,7 +27,11 @@ def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str) -> t
     """
     if test_param not in param_grid.keys():
         raise ValueError(f"Invalid parameter specified: {test_param}")
-    _, best, _ = cv_grid_search(fit_gd_linear, predict_linear, X, y, param_grid, seed=SEED)
+    parameters, best, _ = cv_grid_search(fit_gd_linear, predict_linear, X, y, param_grid, seed=SEED)
+    param_values_scores = [[params_score_pair["params"][test_param], params_score_pair["mean_metric"]] for params_score_pair in parameters]
+    values = [pv[0] for pv in param_values_scores]
+    scores = [pv[1] for pv in param_values_scores]
+    plot_curve(values, scores, test_param, "MSE", f"MSE vs. {test_param}", f"results/linear/linear_results_{test_param}.png")
     return (best["params"][test_param], best["mean_metric"])
 
 def linearize_synth_quad(X_train: np.ndarray, X_test: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -82,13 +88,13 @@ def main():
         closed_form_ridge_weights = fit_normal_eq_ridge(X_train, y_train, l2_star)
         
         # Now test all three of those models after preprocessing the test set
-        X_test = (X_test - mu) / sigma
-        X_test = add_bias(X_test)
-        y_hat_no_reg = predict_linear(X_test, no_reg_model_weights)
+        X_test_std = (X_test - mu) / sigma
+        X_test_std = add_bias(X_test_std)
+        y_hat_no_reg = predict_linear(X_test_std, no_reg_model_weights)
         mse_no_reg = np.mean((y_hat_no_reg - y_test)**2)
-        y_hat_reg = predict_linear(X_test, reg_model_weights)
+        y_hat_reg = predict_linear(X_test_std, reg_model_weights)
         mse_reg = np.mean((y_hat_reg - y_test)**2)
-        y_hat_closed = predict_linear(X_test, closed_form_ridge_weights)
+        y_hat_closed = predict_linear(X_test_std, closed_form_ridge_weights)
         mse_closed = np.mean((y_hat_closed - y_test)**2)
         
         # Generate a report
@@ -101,10 +107,20 @@ def main():
     Closed-form ridge (l2_star): {mse_closed}
         """
         
-        import os
         os.makedirs("results/linear", exist_ok=True)
         with open(f"results/linear/{label}.txt", "w") as f:
             f.write(report)
+            
+        # We'll also create plots for the synthetic linear and linearized synthetic quadratic plots
+        if label == "synthetic_linear" or label == "linearized_synth_quadratic":
+            x = X_test
+            if label == "linearized_synth_quadratic":
+                x = x[:, 0] # Only care about actual features for plotting; not squared features
+            order = np.argsort(x)
+            x = x[order]
+            preds = {"no_reg":y_hat_no_reg[order], "reg":y_hat_reg[order], "closed":y_hat_closed[order]}
+            for title, yhat in preds.items():
+                plot_curve(x, yhat, "X", "yhat", f"{title} on {label}", f"results/linear/{title}_linear_regression_{label}.png")
             
 if __name__=="__main__":
     main()

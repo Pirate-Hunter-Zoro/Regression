@@ -3,6 +3,9 @@ from src.datasets import make_synth_clf, load_breast_cancer_data, load_digits_fu
 from src.cv import cv_grid_search
 from src.models_logistic import fit_gd_logistic, predict_labels_softmax
 from src.utils import *
+from src.plots import plot_curve
+import matplotlib.pyplot as plt
+import os
 
 SEED = 123
 
@@ -11,7 +14,7 @@ n_test = 1000
 
 chosen_iters = 500
 
-def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str) -> tuple[float,float]:
+def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str, dataset_label: str) -> tuple[float,float]:
     """Helper function to run the cv_grid_search and return the best parameter value for the specified parameter
 
     Args:
@@ -25,7 +28,11 @@ def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str) -> t
     """
     if test_param not in param_grid.keys():
         raise ValueError(f"Invalid parameter specified: {test_param}")
-    _, best, _ = cv_grid_search(fit_gd_logistic, predict_labels_softmax, X, y, param_grid, seed=SEED, task="clf")
+    parameters, best, _ = cv_grid_search(fit_gd_logistic, predict_labels_softmax, X, y, param_grid, seed=SEED, task="clf")
+    param_values_scores = [[params_score_pair["params"][test_param], params_score_pair["mean_metric"]] for params_score_pair in parameters]
+    values = [pv[0] for pv in param_values_scores]
+    scores = [pv[1] for pv in param_values_scores]
+    plot_curve(values, scores, test_param, "Accuracy", f"Accuracy vs. {test_param}", f"results/logistic/logistic_results_{test_param}_{dataset_label}.png")
     return (best["params"][test_param], best["mean_metric"])
 
 
@@ -37,11 +44,11 @@ def main():
         
         # Sweep to find the best learning rate
         param_grid_A = {"eta":[1e-3,3e-3,1e-2,3e-2,1e-1], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0]}
-        eta_star, accuracy_eta_star = run_grid(X_train, y_train, param_grid_A, "eta")
+        eta_star, accuracy_eta_star = run_grid(X_train, y_train, param_grid_A, "eta", label)
 
         # Sweep to find best l2 regularization constant
         param_grid_B = {"eta":[eta_star], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0,1e-4,3e-4,1e-3,3e-3,1e-2,3e-2]}
-        l2_star, accuracy_l2_star = run_grid(X_train, y_train, param_grid_B, "l2")
+        l2_star, accuracy_l2_star = run_grid(X_train, y_train, param_grid_B, "l2", label)
         
         # The parameter grid sweep preprocesses the data, but for the remainder of our calls we need to do that ourself
         X_train, mu, sigma = standardize(X_train)
@@ -52,14 +59,14 @@ def main():
         no_reg_model_weights = fit_gd_logistic(X_train, y_train, K, eta_star, chosen_iters)
         
         # Test the non-regularization training logistic model after preprocessing the test set
-        X_test = (X_test - mu) / sigma
-        X_test = add_bias(X_test)
-        y_hat_no_reg = predict_labels_softmax(X_test, no_reg_model_weights)
+        X_test_std = (X_test - mu) / sigma
+        X_test_std = add_bias(X_test_std)
+        y_hat_no_reg = predict_labels_softmax(X_test_std, no_reg_model_weights)
         accuracy_no_reg = sum(y_hat_no_reg == y_test) / len(y_test)
         
         # Now for regularization training
         reg_model_weights = fit_gd_logistic(X_train, y_train, K, eta_star, chosen_iters, l2=l2_star)
-        y_hat_reg = predict_labels_softmax(X_test, reg_model_weights)
+        y_hat_reg = predict_labels_softmax(X_test_std, reg_model_weights)
         accuracy_reg = sum(y_hat_reg == y_test) / len(y_test)
         
         # Generate a report
@@ -70,10 +77,18 @@ def main():
     Accuracy with Regularized Learning: {accuracy_reg}
         """
         
-        import os
         os.makedirs("results/logistic", exist_ok=True)
         with open(f"results/logistic/{label}.txt", "w") as f:
             f.write(report)
+            
+        # We'll also create plots for the 2D synthetic classifiable data
+        if label == "synthetic_clf":
+            preds = {"no_reg":y_hat_no_reg, "reg":y_hat_reg}
+            for title, yhat in preds.items():
+                plt.scatter(X_test[:,0], X_test[:,1], c=yhat)
+                plt.title(f"{title} on {label}")
+                plt.savefig(f"results/logistic/{title}_logistic_regression_{label}.png")
+                plt.close()
             
 if __name__=="__main__":
     main()
