@@ -1,0 +1,6 @@
+=== digits4v9_linear_binary_classification_wrapper ===
+CV-A (learning weight sweep, l2=0): best learning rate = 0.01, mean CV accuracy = 0.99
+CV-B (l2 sweep @ eta=0.01): best l2 = 0.0, mean CV accuracy = 0.99
+Accuracy without Regularized Learning: 0.985
+Accuracy with Regularized Learning: 0.985
+    

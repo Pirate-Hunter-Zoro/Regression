@@ -1,5 +1,6 @@
 import numpy as np
 from src.utils import *
+from src.models_linear import fit_gd_linear
 
 def kfold_indices(n:int, k:int=10, seed:int=42) -> list[tuple[np.ndarray,np.ndarray]]:
     """Create a (seeded) random partioning of the observation indices in k folds, where during training each fold gets a chance to be the test set and all other folds form the training set
@@ -99,7 +100,7 @@ def cv_grid_search(model_fn, predict_fn, X:np.ndarray, y:np.ndarray, param_grid:
             for l1 in param_grid["l1"]:
                 for l2 in param_grid["l2"]:
                     params = {"eta":eta, "iters":iters, "l1":l1, "l2":l2}
-                    if task == "clf":
+                    if task == "clf" and model_fn != fit_gd_linear: # For the case of binary classification digit wrapper with linear regression
                         params["K"] = num_classes
                     fold_metrics = []
                     for train_test_split in k_folds:
