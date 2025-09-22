@@ -1,101 +1,102 @@
-# Policy Discovery – Regression & Classification
 
-This project implements regression and classification algorithms from scratch, with cross-validation, hyperparameter sweeps, and dataset evaluations. It is part of the CS885 assignment framework.
+# Regression and Classification Project
 
-## Contents
+This repository contains implementations and experiments for a machine learning project covering **Linear Regression**, **Logistic Regression**, and **Digits Classification**. The work includes hyperparameter sweeps, regularization, closed-form solutions, and visualization of results.
 
-- **src/**: Core source code  
-  - `datasets.py`: Synthetic and real dataset loaders (California Housing, Breast Cancer, Digits, etc.)  
-  - `cv.py`: Cross-validation grid search (`cv_grid_search`)  
-  - `models_linear.py`: Linear regression (gradient descent with L1/L2, normal equation with ridge)  
-  - `models_logistic.py`: Logistic regression (gradient descent with L1/L2)  
-  - `plots.py`: Simple plotting utilities (`plot_curve`)  
-  - `utils.py`: Bias column, standardization, helpers  
+---
 
-- **run_linear.py**: Runs regression experiments (synthetic linear, quadratic, California housing)  
-- **run_logistic.py**: Runs classification experiments (synthetic classification, breast cancer, digits full, digits 4v9)  
-- **run_digits_linear.py**: Special comparison between linear regression (with wrapper) vs. logistic regression on Digits 4v9  
-- **results/**:  
-  - `linear/`: Text reports + plots for regression experiments  
-  - `logistic/`: Text reports + plots for classification experiments  
-  - `digits_linear_clf/`: Text reports + plots for 4v9 linear vs. logistic comparison  
-
-## Requirements
-
-- Python 3.10+  
-- NumPy  
-- Matplotlib  
-- scikit-learn (for datasets)  
-
-Create a virtual environment and install requirements:
+## Project Structure
 
 ```bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+├── src/
+│   ├── datasets.py          # Synthetic and real dataset loaders
+│   ├── models_linear.py     # Linear regression models (GD + closed-form ridge)
+│   ├── models_logistic.py   # Logistic regression models
+│   ├── cv.py                # Cross-validation and grid search
+│   ├── utils.py             # Helpers (standardization, bias column, etc.)
+│   ├── plots.py             # Simple plotting utilities
+│   └── __init__.py
+├── run_linear.py            # Experiments with linear regression (synthetic + California housing)
+├── run_logistic.py          # Experiments with logistic regression (synthetic clf + breast cancer + digits)
+├── run_digits_linear.py     # Digits 4 vs 9 classification (linear-as-classifier vs logistic)
+├── results/
+│   ├── linear/              # Output reports and plots for linear regression
+│   ├── logistic/            # Output reports and plots for logistic regression
+│   └── digits_linear_clf/   # Output reports for digits experiments
+└── README.md
 ```
 
-*(Add a `requirements.txt` if needed, listing `numpy`, `matplotlib`, `scikit-learn`.)*
+---
 
-## Usage
+## Datasets
 
-### Run Regression Experiments
+- **Synthetic Linear** – Simple y = w·x + noise regression dataset.
+- **Synthetic Quadratic** – Extended to quadratic features for non-linear regression.
+- **California Housing** – Real regression dataset from sklearn.
+- **Synthetic Classification** – 2D synthetic dataset for binary classification visualization.
+- **Breast Cancer** – Classification dataset from sklearn.
+- **Digits (Full)** – Multiclass classification dataset (0–9).
+- **Digits (4 vs 9)** – Subset reduced to binary classification.
+
+---
+
+## Methods Implemented
+
+### Linear Regression
+- Gradient descent (with L1/L2 regularization)
+- Closed-form ridge regression (with safe epsilon for singular matrices)
+- Bias term handling
+- Standardization of features
+
+### Logistic Regression
+- Multiclass softmax regression via gradient descent
+- L1 and L2 regularization
+- Cross-validation hyperparameter tuning
+
+### Digits Classification
+- Binary classification (4 vs 9)
+- Comparison of linear regression (with rounding wrapper) vs logistic regression
+
+---
+
+## Results
+
+- All experiments log results into `results/` as `.txt` summaries and `.png` plots.
+- Reports include:
+  - Cross-validation sweeps for η (learning rate), λ₂ (ridge), λ₁ (lasso)
+  - Final test MSEs (linear) or accuracies (logistic)
+- Plots visualize:
+  - CV sweep curves (Accuracy or MSE vs parameter)
+  - Regression fits for synthetic linear/quadratic datasets
+  - Classification regions for synthetic classification dataset
+
+---
+
+## How to Run
 
 ```bash
+# Run linear regression experiments
 python run_linear.py
-```
 
-Outputs:
-
-- Text reports in `results/linear/`  
-- Plots:  
-  - MSE vs. learning rate (`linear_results_eta.png`)  
-  - MSE vs. regularization (`linear_results_l2.png`)  
-  - Predictor fits for synthetic datasets  
-
-### Run Classification Experiments
-
-```bash
+# Run logistic regression experiments
 python run_logistic.py
-```
 
-Outputs:
-
-- Text reports in `results/logistic/`  
-- Plots:  
-  - Accuracy vs. learning rate (`logistic_results_eta_*.png`)  
-  - Accuracy vs. regularization (`logistic_results_l2_*.png`)  
-  - Synthetic classification decision boundaries  
-
-### Run Digits Linear vs Logistic Comparison
-
-```bash
+# Run digits (4 vs 9) experiments
 python run_digits_linear.py
 ```
 
-Outputs:
+Outputs will be saved under `results/`.
 
-- Text reports in `results/digits_linear_clf/`  
-- Plots comparing linear regression wrapper vs logistic regression on 4v9  
+---
 
-## Project Notes
+## Notes
 
-- All models are trained from scratch using gradient descent or closed-form solutions.  
-- Cross-validation (`cv_grid_search`) is used to select hyperparameters (`eta`, `l2`).  
-- Bias terms must be added explicitly (`add_bias` from `utils.py`).  
-- For quadratic regression, input features are linearized ([X, X²]).  
-
-## Results Overview
-
-- **Regression**:  
-  - Linear fits show expected performance (quadratic improves after linearization).  
-  - Ridge regularization reduces variance slightly.  
-- **Classification**:  
-  - Logistic regression achieves high accuracy across datasets.  
-  - Digits 4v9: logistic regression outperforms linear regression with wrapper.  
+- Standardization parameters (μ, σ) are learned on the training set and reused for test preprocessing.
+- Closed-form ridge uses a minimum epsilon (`1e-6`) to prevent singular matrices.
+- Lasso closed-form is not implemented (requires coordinate descent); we only support lasso via gradient descent.
 
 ---
 
 ## Authors
 
-Implemented for CS885 Assignment – Winter 2022.  
+Project completed as part of coursework. Contains implementations of linear models, logistic models, and dataset experiments with cross-validation and visualization.

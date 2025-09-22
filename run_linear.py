@@ -13,7 +13,7 @@ n_test = 1000
 
 chosen_iters = 500
 
-def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str) -> tuple[float,float]:
+def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str, label:str) -> tuple[float,float]:
     """Helper function to run the cv_grid_search and return the best parameter value for the specified parameter
 
     Args:
@@ -21,6 +21,7 @@ def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str) -> t
         y (np.ndarray): expected outputs
         param_grid (dict): dictionary of parameters
         test_param (str): parameter cared about
+        label (str): data set label
 
     Returns:
         tuple[float,float]: the best value for parameter cared about paired with the resulting metric achieved by said value
@@ -31,7 +32,7 @@ def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str) -> t
     param_values_scores = [[params_score_pair["params"][test_param], params_score_pair["mean_metric"]] for params_score_pair in parameters]
     values = [pv[0] for pv in param_values_scores]
     scores = [pv[1] for pv in param_values_scores]
-    plot_curve(values, scores, test_param, "MSE", f"MSE vs. {test_param}", f"results/linear/linear_results_{test_param}.png")
+    plot_curve(values, scores, test_param, "MSE", f"MSE vs. {test_param}", f"results/linear/linear_results_{test_param}_{label}.png")
     return (best["params"][test_param], best["mean_metric"])
 
 def linearize_synth_quad(X_train: np.ndarray, X_test: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -68,11 +69,15 @@ def main():
         
         # Sweep to find the best learning rate
         param_grid_A = {"eta":[1e-3,3e-3,1e-2,3e-2,1e-1], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0]}
-        eta_star, mse_eta_star = run_grid(X_train, y_train, param_grid_A, "eta")
+        eta_star, mse_eta_star = run_grid(X_train, y_train, param_grid_A, "eta", label)
 
         # Sweep to find best l2 regularization constant
         param_grid_B = {"eta":[eta_star], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0,1e-4,3e-4,1e-3,3e-3,1e-2,3e-2]}
-        l2_star, mse_l2_star = run_grid(X_train, y_train, param_grid_B, "l2")
+        l2_star, mse_l2_star = run_grid(X_train, y_train, param_grid_B, "l2", label)
+        
+        # Now sweep to find best l1 regularization constant
+        param_grid_C = {"eta":[eta_star], "iters":[chosen_iters], "l1":[0.0, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2], "l2":[0]}
+        l1_star, mse_l1_star = run_grid(X_train, y_train, param_grid_C, "l1", label)  
         
         # The parameter grid sweep preprocesses the data, but for the remainder of our calls we need to do that ourself
         X_train, mu, sigma = standardize(X_train)
@@ -84,8 +89,12 @@ def main():
         # Now perform gradient descent with regularization
         reg_model_weights = fit_gd_linear(X_train, y_train, eta_star, chosen_iters, l2=l2_star)
         
+        # Lasso gradient descent
+        lasso_model_weights = fit_gd_linear(X_train, y_train, eta_star, chosen_iters, l1=l1_star)
+        
         # Get your hands on the closed form ridge model (solved through linear algebra)
-        closed_form_ridge_weights = fit_normal_eq_ridge(X_train, y_train, l2_star)
+        l2_star_safe = max(l2_star, 1e-6) # To ensure non-singularity of matrix
+        closed_form_ridge_weights = fit_normal_eq_ridge(X_train, y_train, l2_star_safe)
         
         # Now test all three of those models after preprocessing the test set
         X_test_std = (X_test - mu) / sigma
@@ -94,6 +103,8 @@ def main():
         mse_no_reg = np.mean((y_hat_no_reg - y_test)**2)
         y_hat_reg = predict_linear(X_test_std, reg_model_weights)
         mse_reg = np.mean((y_hat_reg - y_test)**2)
+        y_hat_lasso = predict_linear(X_test_std, lasso_model_weights)
+        mse_lasso = np.mean((y_hat_lasso - y_test)**2)
         y_hat_closed = predict_linear(X_test_std, closed_form_ridge_weights)
         mse_closed = np.mean((y_hat_closed - y_test)**2)
         
@@ -101,9 +112,11 @@ def main():
         report = f"""=== {label} ===
     CV-A (learning weight sweep, l2=0): best learning rate = {eta_star}, mean CV MSE = {mse_eta_star}
     CV-B (l2 sweep @ eta={eta_star}): best l2 = {l2_star}, mean CV MSE = {mse_l2_star}
+    CV-C (l1 sweep @ eta={eta_star}): best l1 = {l1_star}, mean CV MSE = {mse_l1_star}
     Test MSEs:
     GD (no reg):    {mse_no_reg}
     GD (ridge, l2_star):  {mse_reg}
+    GD (lasso, l1_star): {mse_lasso}
     Closed-form ridge (l2_star): {mse_closed}
         """
         
@@ -113,12 +126,12 @@ def main():
             
         # We'll also create plots for the synthetic linear and linearized synthetic quadratic plots
         if label == "synthetic_linear" or label == "linearized_synth_quadratic":
-            x = X_test
+            x = X_test.squeeze()
             if label == "linearized_synth_quadratic":
-                x = x[:, 0] # Only care about actual features for plotting; not squared features
+                x = X_test[:, 0] # Only care about actual features for plotting; not squared features
             order = np.argsort(x)
             x = x[order]
-            preds = {"no_reg":y_hat_no_reg[order], "reg":y_hat_reg[order], "closed":y_hat_closed[order]}
+            preds = {"no_reg":y_hat_no_reg[order], "reg":y_hat_reg[order], "lasso":y_hat_lasso[order], "closed":y_hat_closed[order]}
             for title, yhat in preds.items():
                 plot_curve(x, yhat, "X", "yhat", f"{title} on {label}", f"results/linear/{title}_linear_regression_{label}.png")
             
