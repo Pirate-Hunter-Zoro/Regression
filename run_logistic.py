@@ -14,7 +14,7 @@ n_test = 1000
 
 chosen_iters = 500
 
-def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str, dataset_label: str) -> tuple[float,float]:
+def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str, dataset_label: str) -> tuple[float,float,float,float]:
     """Helper function to run the cv_grid_search and return the best parameter value for the specified parameter
 
     Args:
@@ -24,16 +24,16 @@ def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str, data
         test_param (str): parameter cared about
 
     Returns:
-        tuple[float,float]: the best value for parameter cared about paired with the resulting metric achieved by said value
+        tuple[float,float]: best parameter, score of best, worst parameter, score of worst
     """
     if test_param not in param_grid.keys():
         raise ValueError(f"Invalid parameter specified: {test_param}")
-    parameters, best, _ = cv_grid_search(fit_gd_logistic, predict_labels_softmax, X, y, param_grid, seed=SEED, task="clf")
+    parameters, best, worst = cv_grid_search(fit_gd_logistic, predict_labels_softmax, X, y, param_grid, seed=SEED, task="clf")
     param_values_scores = [[params_score_pair["params"][test_param], params_score_pair["mean_metric"]] for params_score_pair in parameters]
     values = [pv[0] for pv in param_values_scores]
     scores = [pv[1] for pv in param_values_scores]
     plot_curve(values, scores, test_param, "Accuracy", f"Accuracy vs. {test_param}", f"results/logistic/logistic_results_{test_param}_{dataset_label}.png")
-    return (best["params"][test_param], best["mean_metric"])
+    return (best["params"][test_param], best["mean_metric"], worst["params"][test_param], worst["mean_metric"])
 
 
 def main():
@@ -44,15 +44,15 @@ def main():
         
         # Sweep to find the best learning rate
         param_grid_A = {"eta":[1e-3,3e-3,1e-2,3e-2,1e-1], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0]}
-        eta_star, accuracy_eta_star = run_grid(X_train, y_train, param_grid_A, "eta", label)
+        eta_star, accuracy_eta_star, worst_eta, accuracy_worst_eta = run_grid(X_train, y_train, param_grid_A, "eta", label)
 
         # Sweep to find best l2 regularization constant
         param_grid_B = {"eta":[eta_star], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0,1e-4,3e-4,1e-3,3e-3,1e-2,3e-2]}
-        l2_star, accuracy_l2_star = run_grid(X_train, y_train, param_grid_B, "l2", label)
+        l2_star, accuracy_l2_star, worst_l2, accuracy_worst_l2 = run_grid(X_train, y_train, param_grid_B, "l2", label)
         
         # Now sweep to find best l1 regularization constant
         param_grid_C = {"eta":[eta_star], "iters":[chosen_iters], "l1":[0.0, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2], "l2":[0]}
-        l1_star, accuracy_l1_star = run_grid(X_train, y_train, param_grid_C, "l1", label)  
+        l1_star, accuracy_l1_star, worst_l1, accuracy_worst_l1 = run_grid(X_train, y_train, param_grid_C, "l1", label)  
         
         # The parameter grid sweep preprocesses the data, but for the remainder of our calls we need to do that ourself
         X_train, mu, sigma = standardize(X_train)
@@ -80,9 +80,9 @@ def main():
         
         # Generate a report
         report = f"""=== {label} ===
-    CV-A (learning weight sweep, l2=0): best learning rate = {eta_star}, mean CV accuracy = {accuracy_eta_star}
-    CV-B (l2 sweep @ eta={eta_star}): best l2 = {l2_star}, mean CV accuracy = {accuracy_l2_star}
-    CV-C (l1 sweep @ eta={eta_star}): best l1 = {l1_star}, mean CV accuracy = {accuracy_l1_star}
+    CV-A (learning weight sweep, l2=0): best learning rate = {eta_star}, mean CV accuracy = {accuracy_eta_star}, worst eta = {worst_eta}, mean CV accuracy for worst eta = {accuracy_worst_eta}
+    CV-B (l2 sweep @ eta={eta_star}): best l2 = {l2_star}, mean CV accuracy = {accuracy_l2_star}, worst l2 = {worst_l2}, mean CV accuracy for worst l2 = {accuracy_worst_l2}
+    CV-C (l1 sweep @ eta={eta_star}): best l1 = {l1_star}, mean CV accuracy = {accuracy_l1_star}, worst l1 = {worst_l1}, mean CV accuracy for worst l1 = {accuracy_worst_l1}
     Accuracy without Regularized Learning: {accuracy_no_reg}
     Accuracy with Regularized Learning: {accuracy_reg}
     Accuracy with Lasso Learning: {accuracy_lasso}

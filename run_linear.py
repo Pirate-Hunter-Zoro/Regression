@@ -28,12 +28,12 @@ def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str, labe
     """
     if test_param not in param_grid.keys():
         raise ValueError(f"Invalid parameter specified: {test_param}")
-    parameters, best, _ = cv_grid_search(fit_gd_linear, predict_linear, X, y, param_grid, seed=SEED)
+    parameters, best, worst = cv_grid_search(fit_gd_linear, predict_linear, X, y, param_grid, seed=SEED)
     param_values_scores = [[params_score_pair["params"][test_param], params_score_pair["mean_metric"]] for params_score_pair in parameters]
     values = [pv[0] for pv in param_values_scores]
     scores = [pv[1] for pv in param_values_scores]
     plot_curve(values, scores, test_param, "MSE", f"MSE vs. {test_param}", f"results/linear/linear_results_{test_param}_{label}.png")
-    return (best["params"][test_param], best["mean_metric"])
+    return (best["params"][test_param], best["mean_metric"], worst["params"][test_param], worst["mean_metric"])
 
 def linearize_synth_quad(X_train: np.ndarray, X_test: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Linearize synthetic quadratic data by appending the features squared to the list of features (doubling the length of the features) 
@@ -69,15 +69,15 @@ def main():
         
         # Sweep to find the best learning rate
         param_grid_A = {"eta":[1e-3,3e-3,1e-2,3e-2,1e-1], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0]}
-        eta_star, mse_eta_star = run_grid(X_train, y_train, param_grid_A, "eta", label)
+        eta_star, mse_eta_star, worst_eta, worst_eta_mse = run_grid(X_train, y_train, param_grid_A, "eta", label)
 
         # Sweep to find best l2 regularization constant
         param_grid_B = {"eta":[eta_star], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0,1e-4,3e-4,1e-3,3e-3,1e-2,3e-2]}
-        l2_star, mse_l2_star = run_grid(X_train, y_train, param_grid_B, "l2", label)
+        l2_star, mse_l2_star, worst_l2, worst_l2_mse = run_grid(X_train, y_train, param_grid_B, "l2", label)
         
         # Now sweep to find best l1 regularization constant
         param_grid_C = {"eta":[eta_star], "iters":[chosen_iters], "l1":[0.0, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2], "l2":[0]}
-        l1_star, mse_l1_star = run_grid(X_train, y_train, param_grid_C, "l1", label)  
+        l1_star, mse_l1_star, worst_l1, worst_l1_mse = run_grid(X_train, y_train, param_grid_C, "l1", label)  
         
         # The parameter grid sweep preprocesses the data, but for the remainder of our calls we need to do that ourself
         X_train, mu, sigma = standardize(X_train)
@@ -110,9 +110,9 @@ def main():
         
         # Generate a report
         report = f"""=== {label} ===
-    CV-A (learning weight sweep, l2=0): best learning rate = {eta_star}, mean CV MSE = {mse_eta_star}
-    CV-B (l2 sweep @ eta={eta_star}): best l2 = {l2_star}, mean CV MSE = {mse_l2_star}
-    CV-C (l1 sweep @ eta={eta_star}): best l1 = {l1_star}, mean CV MSE = {mse_l1_star}
+    CV-A (learning weight sweep, l2=0): best learning rate = {eta_star}, mean CV MSE = {mse_eta_star}, worst eta = {worst_eta}, mean CV MSE worse eta = {worst_eta_mse}
+    CV-B (l2 sweep @ eta={eta_star}): best l2 = {l2_star}, mean CV MSE = {mse_l2_star}, worst l2 = {worst_l2}, mean CV MSE worse l2 = {worst_l2_mse}
+    CV-C (l1 sweep @ eta={eta_star}): best l1 = {l1_star}, mean CV MSE = {mse_l1_star}, worst l1 = {worst_l1}, mean CV MSE worse l1 = {worst_l1_mse}
     Test MSEs:
     GD (no reg):    {mse_no_reg}
     GD (ridge, l2_star):  {mse_reg}

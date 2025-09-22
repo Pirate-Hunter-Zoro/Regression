@@ -1,7 +1,7 @@
 === digits_full ===
-    CV-A (learning weight sweep, l2=0): best learning rate = 0.1, mean CV accuracy = 0.9279999999999999
-    CV-B (l2 sweep @ eta=0.1): best l2 = 0.0003, mean CV accuracy = 0.9299999999999999
-    CV-C (l1 sweep @ eta=0.1): best l1 = 0.003, mean CV accuracy = 0.9339999999999998
+    CV-A (learning weight sweep, l2=0): best learning rate = 0.1, mean CV accuracy = 0.9279999999999999, worst eta = 0.001, mean CV accuracy for worst eta = 0.8480000000000001
+    CV-B (l2 sweep @ eta=0.1): best l2 = 0.0003, mean CV accuracy = 0.9299999999999999, worst l2 = 0.0, mean CV accuracy for worst l2 = 0.9279999999999999
+    CV-C (l1 sweep @ eta=0.1): best l1 = 0.003, mean CV accuracy = 0.9339999999999998, worst l1 = 0.03, mean CV accuracy for worst l1 = 0.884
     Accuracy without Regularized Learning: 0.955
     Accuracy with Regularized Learning: 0.955
     Accuracy with Lasso Learning: 0.958

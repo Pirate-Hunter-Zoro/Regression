@@ -1,7 +1,7 @@
 === breast_cancer ===
-    CV-A (learning weight sweep, l2=0): best learning rate = 0.003, mean CV accuracy = 0.9700000000000001
-    CV-B (l2 sweep @ eta=0.003): best l2 = 0.0, mean CV accuracy = 0.9700000000000001
-    CV-C (l1 sweep @ eta=0.003): best l1 = 0.0, mean CV accuracy = 0.9700000000000001
+    CV-A (learning weight sweep, l2=0): best learning rate = 0.003, mean CV accuracy = 0.9700000000000001, worst eta = 0.001, mean CV accuracy for worst eta = 0.95
+    CV-B (l2 sweep @ eta=0.003): best l2 = 0.0, mean CV accuracy = 0.9700000000000001, worst l2 = 0.0, mean CV accuracy for worst l2 = 0.9700000000000001
+    CV-C (l1 sweep @ eta=0.003): best l1 = 0.0, mean CV accuracy = 0.9700000000000001, worst l1 = 0.0, mean CV accuracy for worst l1 = 0.9700000000000001
     Accuracy without Regularized Learning: 0.9566666666666667
     Accuracy with Regularized Learning: 0.9566666666666667
     Accuracy with Lasso Learning: 0.9566666666666667

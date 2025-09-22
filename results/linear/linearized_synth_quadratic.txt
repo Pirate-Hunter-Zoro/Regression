@@ -1,7 +1,7 @@
 === linearized_synth_quadratic ===
-    CV-A (learning weight sweep, l2=0): best learning rate = 0.1, mean CV MSE = 0.009034424464532622
-    CV-B (l2 sweep @ eta=0.1): best l2 = 0.0, mean CV MSE = 0.009034424464532622
-    CV-C (l1 sweep @ eta=0.1): best l1 = 0.0003, mean CV MSE = 0.009034247395221334
+    CV-A (learning weight sweep, l2=0): best learning rate = 0.1, mean CV MSE = 0.009034424464532622, worst eta = 0.001, mean CV MSE worse eta = 11.868760400816837
+    CV-B (l2 sweep @ eta=0.1): best l2 = 0.0, mean CV MSE = 0.009034424464532622, worst l2 = 0.03, mean CV MSE worse l2 = 0.01132939741036133
+    CV-C (l1 sweep @ eta=0.1): best l1 = 0.0003, mean CV MSE = 0.009034247395221334, worst l1 = 0.03, mean CV MSE worse l1 = 0.009930729382071493
     Test MSEs:
     GD (no reg):    0.009768925293272245
     GD (ridge, l2_star):  0.009768925293272245
