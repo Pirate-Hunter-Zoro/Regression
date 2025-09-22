@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.datasets import fetch_california_housing, load_breast_cancer, load_digits
 
-def make_synth_reg_linear(n_train: int=100, n_test: int=20, noise: float=0.1, seed: int=42) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: 
+def make_synth_reg_linear(n_train: int=100, n_test: int=20, noise: float=.5, seed: int=42) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: 
     """Generate synthetic linear regression data with the specified number of training and testing cases and noise
 
     Args:
@@ -31,7 +31,7 @@ def make_synth_reg_linear(n_train: int=100, n_test: int=20, noise: float=0.1, se
     y_test = y_all[test_indices]
     return (X_train, y_train, X_test, y_test)
 
-def make_synth_reg_quadratic(n_train: int=100, n_test: int=20, noise: float=0.1, seed: int=42) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: 
+def make_synth_reg_quadratic(n_train: int=100, n_test: int=20, noise: float=.5, seed: int=42) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: 
     """Generate synthetic quadratic regression data with the specified number of training and testing cases and noise
 
     Args:
@@ -62,7 +62,7 @@ def make_synth_reg_quadratic(n_train: int=100, n_test: int=20, noise: float=0.1,
     y_test = y_all[test_indices]
     return (X_train, y_train, X_test, y_test)
 
-def make_synth_clf(n_train: int=100, n_test: int=20, noise: float=0.1, seed: int=42) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: 
+def make_synth_clf(n_train: int=100, n_test: int=20, noise: float=.5, seed: int=42) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: 
     """Generate synthetic linear classification data with the specified number of training and testing cases and noise
 
     Args:

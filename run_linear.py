@@ -4,6 +4,7 @@ from src.cv import cv_grid_search
 from src.models_linear import fit_gd_linear, fit_normal_eq_ridge, predict_linear
 from src.utils import *
 from src.plots import plot_curve
+import matplotlib.pyplot as plt
 import os
 
 SEED = 123
@@ -125,15 +126,20 @@ def main():
             f.write(report)
             
         # We'll also create plots for the synthetic linear and linearized synthetic quadratic plots
-        if label == "synthetic_linear" or label == "linearized_synth_quadratic":
+        if label == "synthetic_linear" or label == "linearized_synth_quadratic" or label == "synthetic_quadratic":
             x = X_test.squeeze()
             if label == "linearized_synth_quadratic":
                 x = X_test[:, 0] # Only care about actual features for plotting; not squared features
             order = np.argsort(x)
             x = x[order]
+            plt.scatter(x, y_test[order])
             preds = {"no_reg":y_hat_no_reg[order], "reg":y_hat_reg[order], "lasso":y_hat_lasso[order], "closed":y_hat_closed[order]}
-            for title, yhat in preds.items():
-                plot_curve(x, yhat, "X", "yhat", f"{title} on {label}", f"results/linear/{title}_linear_regression_{label}.png")
+            for train_method, predictions in preds.items():
+                plt.plot(x, predictions, label=train_method)
+            plt.legend()
+            plt.title(f"Linear Regression over {label} Dataset")
+            plt.savefig(f"results/linear/{label}.png")
+            plt.close()
             
 if __name__=="__main__":
     main()

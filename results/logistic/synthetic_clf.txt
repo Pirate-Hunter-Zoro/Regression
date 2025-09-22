@@ -1,8 +1,8 @@
 === synthetic_clf ===
-    CV-A (learning weight sweep, l2=0): best learning rate = 0.001, mean CV accuracy = 1.0, worst eta = 0.001, mean CV accuracy for worst eta = 1.0
-    CV-B (l2 sweep @ eta=0.001): best l2 = 0.0, mean CV accuracy = 1.0, worst l2 = 0.0, mean CV accuracy for worst l2 = 1.0
-    CV-C (l1 sweep @ eta=0.001): best l1 = 0.0, mean CV accuracy = 1.0, worst l1 = 0.0, mean CV accuracy for worst l1 = 1.0
-    Accuracy without Regularized Learning: 1.0
-    Accuracy with Regularized Learning: 1.0
-    Accuracy with Lasso Learning: 1.0
+    CV-A (learning weight sweep, l2=0): best learning rate = 0.01, mean CV accuracy = 0.9800000000000001, worst eta = 0.001, mean CV accuracy for worst eta = 0.976
+    CV-B (l2 sweep @ eta=0.01): best l2 = 0.0, mean CV accuracy = 0.9800000000000001, worst l2 = 0.0, mean CV accuracy for worst l2 = 0.9800000000000001
+    CV-C (l1 sweep @ eta=0.01): best l1 = 0.0, mean CV accuracy = 0.9800000000000001, worst l1 = 0.003, mean CV accuracy for worst l1 = 0.978
+    Accuracy without Regularized Learning: 0.979
+    Accuracy with Regularized Learning: 0.979
+    Accuracy with Lasso Learning: 0.979
         

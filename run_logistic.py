@@ -1,10 +1,11 @@
 import numpy as np
 from src.datasets import make_synth_clf, load_breast_cancer_data, load_digits_full, load_digits_4v9
 from src.cv import cv_grid_search
-from src.models_logistic import fit_gd_logistic, predict_labels_softmax
+from src.models_logistic import fit_gd_logistic, predict_labels_softmax, predict_scores_softmax
 from src.utils import *
 from src.plots import plot_curve
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import os
 
 SEED = 123
@@ -39,20 +40,20 @@ def run_grid(X:np.ndarray, y:np.ndarray, param_grid: dict, test_param: str, data
 def main():
     # Sweep to find the best learning rate
     datasets = {"synthetic_clf": make_synth_clf(n_train, n_test, seed=SEED), "breast_cancer": load_breast_cancer_data(100,300,seed=SEED), "digits_full": load_digits_full(n_train,n_test,seed=SEED), "digits_4v9": load_digits_4v9(100,200,seed=SEED)}
-    for label, dataset in datasets.items():
+    for dataset_name, dataset in datasets.items():
         X_train, y_train, X_test, y_test = dataset
         
         # Sweep to find the best learning rate
         param_grid_A = {"eta":[1e-3,3e-3,1e-2,3e-2,1e-1], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0]}
-        eta_star, accuracy_eta_star, worst_eta, accuracy_worst_eta = run_grid(X_train, y_train, param_grid_A, "eta", label)
+        eta_star, accuracy_eta_star, worst_eta, accuracy_worst_eta = run_grid(X_train, y_train, param_grid_A, "eta", dataset_name)
 
         # Sweep to find best l2 regularization constant
         param_grid_B = {"eta":[eta_star], "iters":[chosen_iters], "l1":[0.0], "l2":[0.0,1e-4,3e-4,1e-3,3e-3,1e-2,3e-2]}
-        l2_star, accuracy_l2_star, worst_l2, accuracy_worst_l2 = run_grid(X_train, y_train, param_grid_B, "l2", label)
+        l2_star, accuracy_l2_star, worst_l2, accuracy_worst_l2 = run_grid(X_train, y_train, param_grid_B, "l2", dataset_name)
         
         # Now sweep to find best l1 regularization constant
         param_grid_C = {"eta":[eta_star], "iters":[chosen_iters], "l1":[0.0, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2], "l2":[0]}
-        l1_star, accuracy_l1_star, worst_l1, accuracy_worst_l1 = run_grid(X_train, y_train, param_grid_C, "l1", label)  
+        l1_star, accuracy_l1_star, worst_l1, accuracy_worst_l1 = run_grid(X_train, y_train, param_grid_C, "l1", dataset_name)  
         
         # The parameter grid sweep preprocesses the data, but for the remainder of our calls we need to do that ourself
         X_train, mu, sigma = standardize(X_train)
@@ -79,7 +80,7 @@ def main():
         accuracy_lasso = sum(y_hat_lasso == y_test) / len(y_test)
         
         # Generate a report
-        report = f"""=== {label} ===
+        report = f"""=== {dataset_name} ===
     CV-A (learning weight sweep, l2=0): best learning rate = {eta_star}, mean CV accuracy = {accuracy_eta_star}, worst eta = {worst_eta}, mean CV accuracy for worst eta = {accuracy_worst_eta}
     CV-B (l2 sweep @ eta={eta_star}): best l2 = {l2_star}, mean CV accuracy = {accuracy_l2_star}, worst l2 = {worst_l2}, mean CV accuracy for worst l2 = {accuracy_worst_l2}
     CV-C (l1 sweep @ eta={eta_star}): best l1 = {l1_star}, mean CV accuracy = {accuracy_l1_star}, worst l1 = {worst_l1}, mean CV accuracy for worst l1 = {accuracy_worst_l1}
@@ -89,17 +90,53 @@ def main():
         """
         
         os.makedirs("results/logistic", exist_ok=True)
-        with open(f"results/logistic/{label}.txt", "w") as f:
+        with open(f"results/logistic/{dataset_name}.txt", "w") as f:
             f.write(report)
             
-        # We'll also create plots for the 2D synthetic classifiable data
-        if label == "synthetic_clf":
-            preds = {"no_reg":y_hat_no_reg, "reg":y_hat_reg, "lasso":y_hat_lasso}
-            for title, yhat in preds.items():
-                plt.scatter(X_test[:,0], X_test[:,1], c=yhat)
-                plt.title(f"{title} on {label}")
-                plt.savefig(f"results/logistic/{title}_logistic_regression_{label}.png")
-                plt.close()
+        if dataset_name == "synthetic_clf":
+            preds = {"no_reg": no_reg_model_weights, "reg": reg_model_weights, "lasso": lasso_model_weights}
+            method_colors = {"no_reg": "C0", "reg": "C1", "lasso": "C2"}
+
+            # Dense grid with a bit of padding
+            x1_min, x1_max = X_test[:, 0].min(), X_test[:, 0].max()
+            x2_min, x2_max = X_test[:, 1].min(), X_test[:, 1].max()
+            pad1 = 0.05 * (x1_max - x1_min)
+            pad2 = 0.05 * (x2_max - x2_min)
+            xx, yy = np.meshgrid(
+                np.linspace(x1_min - pad1, x1_max + pad1, 300),
+                np.linspace(x2_min - pad2, x2_max + pad2, 300)
+            )
+
+            # Standardize with train mu/sigma and add bias
+            grid = np.column_stack([xx.ravel(), yy.ravel()])
+            grid_std = (grid - mu) / sigma
+            grid_std = add_bias(grid_std)
+
+            # Which index is the positive class?
+            labels_sorted = np.unique(y_train)
+            idx_pos = np.where(labels_sorted == 1)[0][0]
+            idx_neg = 1 - idx_pos  # two-class case
+
+            handles = []
+            labels = []
+
+            # First plot the points (slight transparency), then draw contours on top
+            plt.scatter(X_test[:, 0], X_test[:, 1], c=y_test, s=18, alpha=0.7, zorder=1)
+
+            for name, W in preds.items():
+                scores = predict_scores_softmax(grid_std, W)     # shape (N, 2) of logits/scores
+                diff = scores[:, idx_pos] - scores[:, idx_neg]   # positive minus negative
+                Z = diff.reshape(xx.shape)
+
+                cs = plt.contour(xx, yy, Z, levels=[0.0], colors=[method_colors[name]],
+                                linewidths=2.5, zorder=3)
+                handles.append(Line2D([0], [0], color=method_colors[name], lw=2.5))
+                labels.append(name)
+
+            plt.legend(handles=handles, labels=labels, title="Decision Boundary")
+            plt.tight_layout()
+            plt.savefig("results/logistic/synthetic_logistic_results.png")
+            plt.close()
             
 if __name__=="__main__":
     main()
