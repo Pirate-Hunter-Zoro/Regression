@@ -1,10 +1,10 @@
 === synthetic_quadratic ===
-    CV-A (learning weight sweep, l2=0): best learning rate = 0.03, mean CV MSE = 0.2700935927850834, worst eta = 0.001, mean CV MSE worse eta = 13.395580981849724
-    CV-B (l2 sweep @ eta=0.03): best l2 = 0.001, mean CV MSE = 0.2700858312829584, worst l2 = 0.03, mean CV MSE worse l2 = 0.27433695390716567
-    CV-C (l1 sweep @ eta=0.03): best l1 = 0.003, mean CV MSE = 0.2700846316089436, worst l1 = 0.03, mean CV MSE worse l1 = 0.27082168554254216
+    CV-A (learning weight sweep, l2=0): best learning rate = 0.03, mean CV MSE = 0.7974126137560128, worst eta = 0.001, mean CV MSE worse eta = 30.38139173334347
+    CV-B (l2 sweep @ eta=0.03): best l2 = 0.001, mean CV MSE = 0.7973979583068408, worst l2 = 0.03, mean CV MSE worse l2 = 0.8127302938320271
+    CV-C (l1 sweep @ eta=0.03): best l1 = 0.003, mean CV MSE = 0.7973978701395377, worst l1 = 0.03, mean CV MSE worse l1 = 0.7980828821101178
     Test MSEs:
-    GD (no reg):    0.28962214173317896
-    GD (ridge, l2_star):  0.28960289269878386
-    GD (lasso, l1_star): 0.28959936818538573
-    Closed-form ridge (l2_star): 0.2896028846175128
+    GD (no reg):    0.8181617475974579
+    GD (ridge, l2_star):  0.8180541847785887
+    GD (lasso, l1_star): 0.8180836718333957
+    Closed-form ridge (l2_star): 0.8180541524773743
         

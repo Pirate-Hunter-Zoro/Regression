@@ -46,7 +46,7 @@ def make_synth_reg_quadratic(n_train: int=100, n_test: int=20, noise: float=.5, 
     rng = np.random.RandomState(seed=seed)
     n = n_train + n_test
     X_all = rng.rand(n) # all between 0 and 1
-    a = 3
+    a = 10
     b = 5
     c = 2
     no_noise = a*(X_all)**2 + b*(X_all) + c

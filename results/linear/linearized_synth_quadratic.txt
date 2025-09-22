@@ -1,10 +1,10 @@
 === linearized_synth_quadratic ===
-    CV-A (learning weight sweep, l2=0): best learning rate = 0.1, mean CV MSE = 0.22099828633684174, worst eta = 0.001, mean CV MSE worse eta = 12.11740056774631
-    CV-B (l2 sweep @ eta=0.1): best l2 = 0.0, mean CV MSE = 0.22099828633684174, worst l2 = 0.03, mean CV MSE worse l2 = 0.2229612265168403
-    CV-C (l1 sweep @ eta=0.1): best l1 = 0.003, mean CV MSE = 0.22099355708695506, worst l1 = 0.03, mean CV MSE worse l1 = 0.22178191370039965
+    CV-A (learning weight sweep, l2=0): best learning rate = 0.1, mean CV MSE = 0.22214879670953908, worst eta = 0.001, mean CV MSE worse eta = 25.55195526124549
+    CV-B (l2 sweep @ eta=0.1): best l2 = 0.0, mean CV MSE = 0.22214879670953908, worst l2 = 0.03, mean CV MSE worse l2 = 0.2340746701069957
+    CV-C (l1 sweep @ eta=0.1): best l1 = 0.003, mean CV MSE = 0.22214317452964355, worst l1 = 0.03, mean CV MSE worse l1 = 0.22292349477300472
     Test MSEs:
-    GD (no reg):    0.2393861129261156
-    GD (ridge, l2_star):  0.2393861129261156
-    GD (lasso, l1_star): 0.23938773701928892
-    Closed-form ridge (l2_star): 0.23915443944049514
+    GD (no reg):    0.24062797374924574
+    GD (ridge, l2_star):  0.24062797374924574
+    GD (lasso, l1_star): 0.2406241374247259
+    Closed-form ridge (l2_star): 0.23915442973968004
         
