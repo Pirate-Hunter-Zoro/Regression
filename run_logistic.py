@@ -100,22 +100,20 @@ def main():
             # Dense grid with a bit of padding
             x1_min, x1_max = X_test[:, 0].min(), X_test[:, 0].max()
             x2_min, x2_max = X_test[:, 1].min(), X_test[:, 1].max()
-            pad1 = 0.05 * (x1_max - x1_min)
-            pad2 = 0.05 * (x2_max - x2_min)
-            xx, yy = np.meshgrid(
-                np.linspace(x1_min - pad1, x1_max + pad1, 300),
-                np.linspace(x2_min - pad2, x2_max + pad2, 300)
+            x1_grid, x2_grid = np.meshgrid(
+                np.linspace(x1_min, x1_max, 300),
+                np.linspace(x2_min, x2_max, 300)
             )
 
-            # Standardize with train mu/sigma and add bias
-            grid = np.column_stack([xx.ravel(), yy.ravel()])
+            # Standardize with train mu/sigma and add bias - now for every "position" in the grid we can predict its probability of each class with our model
+            grid = np.column_stack([x1_grid.ravel(), x2_grid.ravel()])
             grid_std = (grid - mu) / sigma
             grid_std = add_bias(grid_std)
 
             # Which index is the positive class?
             labels_sorted = np.unique(y_train)
             idx_pos = np.where(labels_sorted == 1)[0][0]
-            idx_neg = 1 - idx_pos  # two-class case
+            idx_neg = 1 - idx_pos  # two-class case (one is 0, one is 1)
 
             handles = []
             labels = []
@@ -124,11 +122,12 @@ def main():
             plt.scatter(X_test[:, 0], X_test[:, 1], c=y_test, s=18, alpha=0.7, zorder=1)
 
             for name, W in preds.items():
-                scores = predict_scores_softmax(grid_std, W)     # shape (N, 2) of logits/scores
+                scores = predict_scores_softmax(grid_std, W)     # shape (N, 2) of logits/scores for our entire grid
                 diff = scores[:, idx_pos] - scores[:, idx_neg]   # positive minus negative
-                Z = diff.reshape(xx.shape)
+                Z = diff.reshape(x1_grid.shape) # Or x2_grid.shape - doesn't matter - point is each observation has a corresponding (prob class 1 MINUS prob class 2) value
 
-                cs = plt.contour(xx, yy, Z, levels=[0.0], colors=[method_colors[name]],
+                # Draw a line EXACTLY where Z is 0.0 - where the model is indifferent between the two classes
+                plt.contour(x1_grid, x2_grid, Z, levels=[0.0], colors=[method_colors[name]],
                                 linewidths=2.5, zorder=3)
                 handles.append(Line2D([0], [0], color=method_colors[name], lw=2.5))
                 labels.append(name)
